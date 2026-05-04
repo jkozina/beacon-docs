@@ -1,0 +1,35 @@
+---
+title: "Assurance Model"
+sidebar_position: 1
+description: "How we prove runtime still matches intent."
+---
+
+import AssuranceModelDiagram from '@site/src/components/diagrams/AssuranceModelDiagram';
+
+# Assurance Model
+
+Assurance is how we keep this from becoming another write-only policy system.
+
+We need to compare five states:
+
+1. **Declared**: what the team requested.
+2. **Approved**: what OPA allowed and under which policy bundle.
+3. **Generated**: what the compiler produced.
+4. **Deployed**: what the PEPs actually contain.
+5. **Observed**: what traffic, logs, routes, and telemetry show.
+
+<AssuranceModelDiagram />
+
+## Findings We Care About
+
+- deployed rule with no declared intent
+- approved intent not deployed
+- observed flow with no current verdict
+- expired verdict still active
+- FQDN now resolves to a different owner, VIP, or compliance domain
+- route bypasses required Palo Alto inspection
+- endpoint policy or SG is broader than approved intent
+- ServiceNow says an asset is retired but traffic is still active
+- Prisma sees a risky exposure tied to an approved path
+
+The practical audit question is: **is this connection allowed because we intended it, or because something drifted?**

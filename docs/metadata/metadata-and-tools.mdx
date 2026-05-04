@@ -1,0 +1,36 @@
+---
+title: "Metadata And Existing Tools"
+sidebar_position: 2
+description: "How metadata moves and how ServiceNow and Prisma fit."
+---
+
+import MetadataFlowDiagram from '@site/src/components/diagrams/MetadataFlowDiagram';
+
+# Metadata And Existing Tools
+
+Metadata is the fuel for this platform. If metadata is bad, our verdicts are bad. We need enough context to decide, enough evidence to audit, and enough runtime data to catch drift.
+
+## Metadata Flow
+
+<MetadataFlowDiagram />
+
+## ServiceNow ITAM
+
+We should use ServiceNow ITAM as a partial asset and lifecycle source. It's useful for ownership hints, support groups, lifecycle state, business service relationships, cost center, and cleanup workflows. It won't see every Kubernetes workload or ephemeral cloud object, so we shouldn't treat it as complete runtime truth.
+
+ServiceNow is also a good workflow destination. If we find an internal FQDN with no owner, a retired asset with active traffic, or conflicting ownership metadata, we can open the cleanup task there.
+
+## Prisma
+
+We should use Prisma as a public cloud inventory and posture source for AWS and GCP. It helps us see cloud resources, tags, security groups, load balancers, endpoints, exposure signals, and posture findings. We still need cloud-native sources like AWS Config, CloudTrail, VPC Flow Logs, GCP Cloud Asset Inventory, routes, and firewall logs for authoritative detail.
+
+## Stores
+
+| Need | Store |
+| --- | --- |
+| Declared intent and generated artifacts | GitHub Enterprise |
+| Verdict records | PostgreSQL-compatible store |
+| Destination registry | PostgreSQL plus graph projection |
+| Resolution cache | PostgreSQL or document store with TTL |
+| Relationship model | Graph database |
+| Runtime inventory and flow history | Object storage, data lake, SIEM, OpenSearch, ClickHouse, or Snowflake |

@@ -1,0 +1,39 @@
+---
+title: "Control Placement"
+sidebar_position: 2
+description: "Where broad and specific policy belongs."
+---
+
+import ControlPlacementDiagram from '@site/src/components/diagrams/ControlPlacementDiagram';
+
+# Control Placement
+
+We need a clean line between primary and transitive controls.
+
+## Primary Controls
+
+Primary controls carry specific application intent. These are the controls we generally write as part of self-service delivery after a passing verdict.
+
+| PEP | Role |
+| --- | --- |
+| Istio ServiceEntry | Primary control for mesh egress from EKS and OpenShift. |
+| VPC endpoint policy | Primary control for AWS managed-service access. |
+| Security groups | Primary for Lambda/EC2 where attached to workload identity; coarse/transitive when shared at node level. |
+| GCP firewall rules/policies | Primary when targeted to workload identity; broad guardrail when at folder/org level. |
+| Google PSC | Primary private service consumption path when paired with owner policy and firewall controls. |
+| Illumio | Primary microsegmentation for non-mesh hosts and selected destination-side controls. |
+
+## Transitive Controls
+
+Transitive controls carry stable enterprise corridor policy. We don't want these to change for every app request.
+
+| PEP | Role |
+| --- | --- |
+| Palo Alto GWLB inspection firewalls | Internet VPC inspection and broad egress risk policy. |
+| Equinix Palo Alto transit firewalls | Cloud-to-on-prem and on-prem-to-cloud corridors. |
+| On-prem Palo Alto fabric firewalls | Data center zone and fabric segmentation. |
+| Shared EKS worker/node SGs | Coarse path control, not pod-level proof. |
+
+<ControlPlacementDiagram />
+
+Our default rule of thumb: if the rule names a specific app-to-app need, it belongs at a primary control. If the rule defines a stable enterprise corridor, inspection requirement, or zone boundary, it belongs at a transitive control.

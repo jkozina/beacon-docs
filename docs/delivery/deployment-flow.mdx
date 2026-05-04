@@ -1,0 +1,26 @@
+---
+title: "Deployment Flow"
+sidebar_position: 1
+description: "How approved intent becomes deployed policy."
+---
+
+import DeploymentFlowDiagram from '@site/src/components/diagrams/DeploymentFlowDiagram';
+
+# Deployment Flow
+
+The developer experience should feel like normal configuration as code.
+
+1. A team opens a GitHub PR with connectivity intent.
+2. GitHub Actions validates schema and source context.
+3. The destination resolver maps FQDN to destination identity.
+4. Metadata enrichment adds ownership, environment, tenant, compliance, asset, and cloud context.
+5. OPA returns an allow/deny verdict.
+6. Denies show up in the PR with rule IDs and remediation.
+7. Allows generate primary-control artifacts with verdict IDs stamped on them.
+8. GitOps applies Kubernetes and mesh artifacts.
+9. Terraform Enterprise applies cloud/provider-managed controls.
+10. Sentinel blocks plans that bypass approved modules or missing verdict metadata.
+11. Gatekeeper blocks unmanaged cluster resources.
+12. Runtime collectors and assurance start checking drift.
+
+<DeploymentFlowDiagram />

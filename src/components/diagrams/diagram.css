@@ -1,0 +1,27 @@
+.editable-diagram {
+  margin: 1.5rem 0 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.editable-diagram-svg {
+  display: block;
+  width: 100%;
+  min-width: 960px;
+  height: auto;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(20, 54, 60, 0.08);
+}
+
+.editable-diagram-svg text,
+.editable-diagram-svg tspan {
+  user-select: text;
+  -webkit-user-select: text;
+  pointer-events: all;
+}
+
+.editable-diagram-card rect,
+.editable-diagram-arrow line {
+  vector-effect: non-scaling-stroke;
+}

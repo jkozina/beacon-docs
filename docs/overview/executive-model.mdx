@@ -1,0 +1,43 @@
+---
+title: "Executive Model"
+sidebar_position: 1
+description: "The end-to-end model in a form we can use with technical leaders."
+---
+
+import ExecutiveFlowDiagram from '@site/src/components/diagrams/ExecutiveFlowDiagram';
+
+# Executive Model
+
+We're building **Beacon**, our Enterprise Connectivity Control Plane, because the old firewall model doesn't scale for our environment. We have too many accounts, clusters, VPCs, data center fabrics, meshes, endpoints, and enforcement points to keep treating connectivity as a ticket-by-ticket firewall exercise.
+
+The model we're aiming for is simple:
+
+- Developers declare the connection they need in code.
+- We resolve the destination and enrich the request with enterprise metadata.
+- We make the network security verdict early, before a control is deployed.
+- We write specific policy only to the right primary control.
+- We keep transitive firewalls broad, stable, and pre-paved.
+- We continuously prove that declared, approved, deployed, and observed states still line up.
+
+## The Story In One Diagram
+
+<ExecutiveFlowDiagram />
+
+## Why This Works
+
+The key move is separating **specific app intent** from **stable transit policy**.
+
+Specific intent belongs near the source or protected destination: Istio ServiceEntry, VPC endpoint policy, Lambda or workload security group, Illumio policy, or a targeted GCP control. Transitive controls like Palo Alto GWLB firewalls, Equinix transit firewalls, and data center segmentation firewalls shouldn't churn every time an app team needs a new connection. Those controls should carry broad enterprise corridor rules and inspection requirements.
+
+That gives us developer speed without giving up control. App teams work in GitHub. Security gets a real verdict before policy lands. Network teams stop taking low-value app-specific firewall changes on transit devices. Audit gets a chain of evidence from request to runtime.
+
+## What We Get
+
+| Outcome | Why it matters |
+| --- | --- |
+| Faster delivery | Teams request connectivity in GitHub using the destination FQDN they already know. |
+| Stronger security | We block bad intent before policy is written to primary controls. |
+| Lower firewall churn | Transit firewalls carry stable corridor policy instead of app-specific rules. |
+| Better metadata | Unknown owners, ambiguous FQDNs, and stale asset records become measurable work. |
+| Cleaner audit | We can trace an allow from declaration to verdict to deployed control to observed flow. |
+| Safer scale | AWS, GCP, EKS, OpenShift, Palo Alto, Illumio, and mesh differences sit behind compilers and assurance. |

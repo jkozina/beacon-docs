@@ -1,0 +1,66 @@
+:root {
+  --ifm-color-primary: #245d63;
+  --ifm-color-primary-dark: #20545a;
+  --ifm-color-primary-darker: #1e4f55;
+  --ifm-color-primary-darkest: #194146;
+  --ifm-color-primary-light: #28666d;
+  --ifm-color-primary-lighter: #2a6b73;
+  --ifm-color-primary-lightest: #307a83;
+  --ifm-code-font-size: 92%;
+  --ifm-heading-font-weight: 700;
+  --ifm-global-radius: 6px;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #68b8b2;
+  --ifm-color-primary-dark: #52aea7;
+  --ifm-color-primary-darker: #47aaa2;
+  --ifm-color-primary-darkest: #398c86;
+  --ifm-color-primary-light: #7ec2bd;
+  --ifm-color-primary-lighter: #89c7c2;
+  --ifm-color-primary-lightest: #abd8d5;
+}
+
+.heroBanner {
+  background:
+    linear-gradient(115deg, rgba(16, 52, 58, 0.92), rgba(38, 91, 93, 0.76)),
+    url('/img/network-grid.svg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 5rem 0 4rem;
+}
+
+.heroBanner h1 {
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  letter-spacing: 0;
+}
+
+.heroBanner p {
+  font-size: 1.2rem;
+  max-width: 760px;
+}
+
+.featureGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 2rem;
+}
+
+.featureCard {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  padding: 1.25rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.featureCard h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+}

@@ -1,0 +1,27 @@
+---
+title: "End-To-End Architecture"
+sidebar_position: 1
+description: "The target architecture and control-plane flow."
+---
+
+import ArchitectureFlowDiagram from '@site/src/components/diagrams/ArchitectureFlowDiagram';
+
+# End-To-End Architecture
+
+We're building a control plane around connectivity intent. It doesn't replace Palo Alto, Istio, security groups, endpoint policies, GCP firewall rules, PSC, or Illumio. It makes those controls easier to use safely at enterprise scale.
+
+<ArchitectureFlowDiagram />
+
+## Main Components
+
+| Component | What we use it for |
+| --- | --- |
+| GitHub Enterprise | Source of record for intent, generated artifacts, policy bundles, compiler code, and review history. |
+| GitHub Actions | Fast feedback: schema checks, destination resolution, metadata enrichment, OPA verdict, compiler dry-run. |
+| Destination Resolver | Turns FQDN-first requests into policy-ready destination identity. |
+| Metadata Enrichment | Adds source, owner, environment, tenant, compliance, asset, and cloud context. |
+| OPA PDP | OPA Policy Decision Point. It makes the central network verdict: allow, deny, or allow with exception. |
+| Artifact Compiler | Converts approved intent into PEP-specific configuration. |
+| Terraform Enterprise + Sentinel | Applies cloud/provider-managed controls and blocks bad plan shapes. |
+| Gatekeeper | Blocks unmanaged Kubernetes and mesh resources that bypass the approved path. |
+| Assurance Graph | Ties together declared intent, verdicts, artifacts, deployed config, routes, logs, and flows. |
