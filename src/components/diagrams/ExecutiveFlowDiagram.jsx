@@ -58,8 +58,8 @@ export default function ExecutiveFlowDiagram() {
             y={125}
             w={174}
             h={138}
-            title="OPA PDP"
-            body={'OPA evaluates enterprise\npolicy, owner rules, risk,\nexceptions, and produces\na signed decision record.'}
+            title="Beacon PDP"
+            body={'Beacon evaluates OPA\npolicy, owner rules, risk,\nexceptions, and returns\na signed decision.'}
             fill={palette.greenSoft}
             stroke={palette.green}
             badge="5"

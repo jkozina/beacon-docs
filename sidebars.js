@@ -17,7 +17,7 @@ const architectureSidebar = [
     items: [
       'architecture/end-to-end-architecture',
       'architecture/control-placement',
-      'architecture/fqdn-first-intent',
+      'architecture/intent-model',
     ],
   },
   {
@@ -35,6 +35,8 @@ const architectureSidebar = [
     collapsed: false,
     items: [
       'policy/verdicting',
+      'policy/pdp-service',
+      'policy/opa-policy-model',
       'policy/tool-responsibilities',
     ],
   },
@@ -44,6 +46,7 @@ const architectureSidebar = [
     collapsed: false,
     items: [
       'delivery/deployment-flow',
+      'delivery/github-action-verdict',
     ],
   },
   {

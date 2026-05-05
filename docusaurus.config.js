@@ -84,6 +84,10 @@ const config = {
               to: '/docs/architecture/end-to-end-architecture',
             },
             {
+              label: 'Intent Model',
+              to: '/docs/architecture/intent-model',
+            },
+            {
               label: 'Source Anchors',
               to: '/docs/reference/source-anchors',
             },
@@ -97,8 +101,8 @@ const config = {
               to: '/docs/architecture/control-placement',
             },
             {
-              label: 'Policy Placement',
-              to: '/docs/architecture/control-placement',
+              label: 'Policy Verdicting',
+              to: '/docs/policy/verdicting',
             },
             {
               label: 'Assurance',

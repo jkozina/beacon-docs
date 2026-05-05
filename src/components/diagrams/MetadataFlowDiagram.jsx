@@ -66,7 +66,7 @@ export default function MetadataFlowDiagram() {
             w={206}
             h={124}
             title="Policy Input"
-            body={'Normalized source and target,\nresolution confidence,\nowner policy, risk posture,\nand required controls.'}
+            body={'Normalized source and target,\nresolution confidence,\nowner policy, risk posture,\nand control requirements.'}
             fill={palette.greenSoft}
             stroke={palette.green}
           />
