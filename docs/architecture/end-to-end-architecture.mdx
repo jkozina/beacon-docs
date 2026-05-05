@@ -17,10 +17,11 @@ We're building a control plane around connectivity intent. It doesn't replace Pa
 | Component | What we use it for |
 | --- | --- |
 | GitHub Enterprise | Source of record for intent, generated artifacts, policy bundles, compiler code, and review history. |
-| GitHub Actions | Fast feedback: schema checks, destination resolution, metadata enrichment, OPA verdict, compiler dry-run. |
+| GitHub Actions | Fast feedback: schema checks, destination resolution, enrichment, Beacon verdict, and compiler dry-run. |
 | Destination Resolver | Turns FQDN-first requests into policy-ready destination identity. |
 | Metadata Enrichment | Adds source, owner, environment, tenant, compliance, asset, and cloud context. |
-| OPA PDP | OPA Policy Decision Point. It makes the central network verdict: allow, deny, or allow with exception. |
+| Beacon PDP API | Managed verdict service that wraps OPA, logs decisions, signs verdicts, and returns allow/deny. |
+| OPA | Policy engine that evaluates enriched connectivity intent inside the Beacon PDP boundary. |
 | Artifact Compiler | Converts approved intent into PEP-specific configuration. |
 | Terraform Enterprise + Sentinel | Applies cloud/provider-managed controls and blocks bad plan shapes. |
 | Gatekeeper | Blocks unmanaged Kubernetes and mesh resources that bypass the approved path. |

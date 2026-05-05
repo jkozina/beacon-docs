@@ -12,7 +12,7 @@ export default function AssuranceModelDiagram() {
       {(markerId) => (
         <>
           <Card x={45} y={142} w={176} h={112} title="Declared" body={'GitHub intent with\nsource repo, centralId,\nworkload context,\nFQDN, port, and TTL.'} fill={palette.blueSoft} stroke={palette.blue} />
-          <Card x={254} y={142} w={176} h={112} title="Approved" body={'OPA verdict with\npolicy bundle, owner\nrules, risk context,\nand expiration.'} fill={palette.greenSoft} stroke={palette.green} />
+          <Card x={254} y={142} w={176} h={112} title="Approved" body={'Beacon verdict with\npolicy bundle, owner\nrules, risk context,\nand expiration.'} fill={palette.greenSoft} stroke={palette.green} />
           <Card x={463} y={142} w={176} h={112} title="Generated" body={'Compiler output with\nartifact hash, target\nPEP, annotations, and\nrendered diff.'} />
           <Card x={672} y={142} w={176} h={112} title="Deployed" body={'Actual PEP state from\nmesh, SGs, endpoint\npolicy, GCP, Illumio,\nor Palo Alto.'} fill={palette.goldSoft} stroke={palette.gold} />
           <Card x={881} y={142} w={176} h={112} title="Observed" body={'Traffic, logs, routes,\nPrisma posture, flow\nrecords, and service\nmesh telemetry.'} fill={palette.goldSoft} stroke={palette.gold} />

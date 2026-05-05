@@ -30,7 +30,7 @@ export default function ArchitectureFlowDiagram() {
             w={185}
             h={112}
             title="GitHub Actions"
-            body={'Runs schema checks,\nresolver calls, enrichment,\nOPA queries, and compiler\ndry-runs on every PR.'}
+            body={'Runs schema checks,\nresolver calls, enrichment,\nBeacon verdict calls, and\ncompiler dry-runs on PRs.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
           />
@@ -57,8 +57,8 @@ export default function ArchitectureFlowDiagram() {
             y={227}
             w={185}
             h={122}
-            title="OPA PDP"
-            body={'Central network verdict:\nallow, deny, exception,\nrequired controls, expiry,\nand policy bundle ID.'}
+            title="Beacon PDP"
+            body={'Managed verdict service:\nallow, deny, exception,\nprimary/transitive controls,\nexpiry, and bundle ID.'}
             fill={palette.greenSoft}
             stroke={palette.green}
           />

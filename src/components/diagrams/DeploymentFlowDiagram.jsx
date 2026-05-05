@@ -39,7 +39,7 @@ export default function DeploymentFlowDiagram() {
             w={164}
             h={126}
             title="Verdict"
-            body={'OPA receives enriched\ninput and returns allow,\ndeny, exception, expiry,\nand policy reasons.'}
+            body={'Beacon PDP evaluates\nenriched input and returns\nallow, deny, exception,\nexpiry, and reasons.'}
             fill={palette.greenSoft}
             stroke={palette.green}
             badge="3"

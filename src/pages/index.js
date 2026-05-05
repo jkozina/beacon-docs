@@ -16,7 +16,7 @@ const features = [
   },
   {
     title: 'Verdicts before deployment',
-    text: 'GitHub Actions, OPA, Terraform Enterprise, Sentinel, and Gatekeeper form one governed delivery path.',
+    text: 'GitHub Actions calls Beacon PDP before GitOps, Terraform Enterprise, Sentinel, and Gatekeeper enforce the path.',
   },
   {
     title: 'Continuous assurance',
