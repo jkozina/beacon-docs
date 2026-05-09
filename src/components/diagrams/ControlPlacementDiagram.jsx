@@ -30,7 +30,7 @@ export default function ControlPlacementDiagram() {
             w={236}
             h={116}
             title="Primary Source Control"
-            body={'Beacon writes specific\nallow policy here when this\nis the closest enforceable\npoint to the source.'}
+            body={'Beacon validates specific\nallow policy here when this\nis the closest enforceable\npoint to the source.'}
             fill={palette.greenSoft}
             stroke={palette.green}
           />

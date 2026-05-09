@@ -7,8 +7,8 @@ import styles from './index.module.css';
 
 const features = [
   {
-    title: 'FQDN-first developer intent',
-    text: 'Teams declare the destination they know, while the platform resolves owners, zones, compliance, VIPs, and PEP path.',
+    title: 'FQDN-first derived intent',
+    text: 'Teams write implementation config while Beacon derives the destination intent and resolves owners, zones, compliance, VIPs, and PEP path.',
   },
   {
     title: 'Primary controls, pre-paved transit',
@@ -20,7 +20,7 @@ const features = [
   },
   {
     title: 'Continuous assurance',
-    text: 'Declared, approved, deployed, routed, and observed states are compared to detect drift and bypass.',
+    text: 'Source config, derived intent, approved verdicts, deployed state, and observed flows are compared to detect drift and bypass.',
   },
 ];
 

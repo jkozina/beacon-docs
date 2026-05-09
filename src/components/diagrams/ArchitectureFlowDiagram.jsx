@@ -20,7 +20,7 @@ export default function ArchitectureFlowDiagram() {
             w={185}
             h={112}
             title="GitHub Enterprise"
-            body={'Source of record for\nintent, generated artifacts,\npolicy bundles, reviews,\nand PR evidence.'}
+            body={'Source of record for\nimplementation config,\nderived intent evidence,\npolicy bundles, reviews,\nand PR evidence.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
           />
@@ -30,7 +30,7 @@ export default function ArchitectureFlowDiagram() {
             w={185}
             h={112}
             title="GitHub Actions"
-            body={'Runs schema checks,\nresolver calls, enrichment,\nBeacon verdict calls, and\ncompiler dry-runs on PRs.'}
+            body={'Strictly extracts intent,\ncomputes implementation\nhash, calls Beacon, and\nreports PR verdicts.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
           />
@@ -67,8 +67,8 @@ export default function ArchitectureFlowDiagram() {
             y={137}
             w={190}
             h={118}
-            title="Artifact Compiler"
-            body={'Renders approved intent\ninto PEP-specific config\nwith verdict IDs and\nmetadata annotations.'}
+            title="Verdict Binding"
+            body={'Signs the allow/deny\nresult with implementation\nhash, expiry, policy\nbundle, and metadata hash.'}
           />
           <Card
             x={930}
@@ -96,7 +96,7 @@ export default function ArchitectureFlowDiagram() {
             w={170}
             h={92}
             title="Assurance Graph"
-            body={'Links declarations,\nverdicts, artifacts,\nflows, routes, owners.'}
+            body={'Links source config,\nderived intent, verdicts,\nimplementation hashes,\nflows, routes, owners.'}
             fill={palette.greenSoft}
             stroke={palette.green}
           />
