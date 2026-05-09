@@ -1,18 +1,18 @@
 ---
 title: "Intent Model"
 sidebar_position: 3
-description: "How developers declare FQDN-first connectivity and how Beacon owns enrichment, approval, and runtime state."
+description: "How Beacon derives FQDN-first intent from developer implementation config and owns enrichment, approval, verdict binding, and runtime state."
 ---
 
 # Intent Model
 
 The intent model is the contract between application teams and Beacon.
 
-Developers should declare the destination they actually understand: the FQDN they need to call. Beacon should handle the hard parts: destination resolution, ownership lookup, metadata enrichment, policy evaluation, control placement, approval proof, artifact generation, deployment tracking, drift detection, and audit.
+Developers should work in the implementation tools they already own: Helm values, Terraform, Kubernetes manifests, Kustomize overlays, mesh config, or platform abstractions. Beacon should derive canonical intent from those files, then handle the hard parts: destination resolution, ownership lookup, metadata enrichment, policy evaluation, verdict binding, deployment tracking, drift detection, and audit.
 
 Our rule is simple:
 
-> Developer Git stores stable FQDN-first intent and immutable approval proof. Beacon stores enrichment, evidence, runtime state, generated artifacts, drift, and audit history.
+> Developer Git stores implementation config and optional derived intent or approval proof. Beacon stores enrichment, verdicts, implementation hashes, runtime state, drift, and audit history.
 
 This keeps the developer experience small while still giving security, network, platform, and audit teams the depth they need.
 
@@ -24,9 +24,46 @@ That's enough to start.
 
 Beacon can resolve the FQDN into a policy-ready destination identity by joining data from DNS, service catalogs, ServiceNow, Prisma, IPAM, Kubernetes, cloud APIs, and existing control-plane inventory.
 
-## Developer-Written Intent
+## Implementation-Native Inputs
 
-This is the shape developers should be able to write by hand. It's intentionally small.
+Most teams shouldn't need to hand-write `NetworkIntent`. They should define the implementation they need and let the Beacon Action extract intent from it.
+
+Example Helm values:
+
+```yaml
+egress:
+  allow:
+    - name: payments
+      host: payments-api.prod.company.internal
+      port: 443
+      protocol: HTTPS
+      justification: Submit payment authorization requests
+      ttlDays: 30
+```
+
+Example Terraform:
+
+```hcl
+resource "aws_security_group_rule" "orders_to_payments" {
+  type        = "egress"
+  protocol    = "tcp"
+  from_port   = 443
+  to_port     = 443
+  cidr_blocks = ["10.42.18.25/32"]
+
+  tags = {
+    beacon_destination_fqdn = "payments-api.prod.company.internal"
+    beacon_justification   = "Submit payment authorization requests"
+    beacon_ttl_days        = "30"
+  }
+}
+```
+
+## Derived NetworkIntent
+
+The Beacon Action normalizes implementation-native config into a canonical `NetworkIntent`. This object is intentionally small and can be stored as workflow evidence or sent directly to Beacon as JSON.
+
+Extraction is strict. If Beacon can't safely derive the full intent from the implementation, the PR fails instead of guessing.
 
 ```yaml
 apiVersion: network.company.com/v1
@@ -51,7 +88,9 @@ spec:
     requestedTtlDays: 365
 ```
 
-The developer is making a clear request: this workload needs egress to this FQDN on this protocol and port for this reason.
+The derived intent makes the request explicit: this workload needs egress to this FQDN on this protocol and port for this reason.
+
+Direct `NetworkIntent` authoring should remain available for advanced cases, shared platform modules, or implementation types without a supported extractor. It just shouldn't be the common developer burden.
 
 ## Beacon-Enriched Intent
 
@@ -229,17 +268,18 @@ We don't want Beacon constantly committing runtime state back into application r
 
 ## What Developers Own
 
-Developers own the request shape:
+Developers own the implementation shape:
 
-- source workload identity
-- destination FQDN
+- Helm values, Terraform, Kubernetes manifests, Kustomize overlays, mesh config, or platform config
+- source workload scoping through the implementation model
+- destination FQDN or required metadata that lets Beacon derive one
 - protocol, port, and SNI
 - business justification
 - ticket or change reference
 - requested TTL
 - repo-level context through the GitHub workflow
 
-Developers shouldn't need to know destination VIPs, IPAM records, owner policy, ServiceNow asset IDs, Prisma findings, route placement, or which downstream policy enforcement points will be touched.
+Developers shouldn't need to know destination VIPs, IPAM records, owner policy, ServiceNow asset IDs, Prisma findings, route placement, or every downstream policy enforcement point. They do need to use supported implementation patterns that Beacon can extract without guessing.
 
 ## What Beacon Owns
 
@@ -252,7 +292,7 @@ Beacon owns the system view:
 - policy input assembly
 - Beacon PDP verdicts
 - signed approval records
-- generated artifact manifests
+- implementation hashes and extraction results
 - deployment state
 - drift state
 - audit events
@@ -262,7 +302,7 @@ Beacon should store this primarily as canonical JSON. YAML is good for humans in
 
 ## What Gets Written Back To Git
 
-After approval, Beacon may write back a stable approved `NetworkIntent` to the developer repo. That approved object should include the durable contract:
+After approval, Beacon may write back a stable derived `NetworkIntent` or approval proof to the developer repo. That object should include the durable contract:
 
 - what was requested
 - what canonical destination Beacon approved
@@ -273,11 +313,11 @@ After approval, Beacon may write back a stable approved `NetworkIntent` to the d
 - the metadata snapshot hash
 - the signed approval
 
-It should not include runtime `status.conditions`, generated artifact refs, deployment state, drift state, workflow run IDs, DNS timestamps, Prisma posture findings, or mutable external inventory details.
+It should not include runtime `status.conditions`, implementation artifact refs, deployment state, drift state, workflow run IDs, DNS timestamps, Prisma posture findings, or mutable external inventory details. In the preferred model, implementation artifacts stay developer-owned rather than Beacon-generated.
 
-## Approved Developer Repo NetworkIntent
+## Optional Approved NetworkIntent
 
-This is the version we're comfortable keeping in the app team's repository after Beacon approval. It's enriched enough to be useful, but not so enriched that the app repo becomes a control-plane database.
+This is the version we're comfortable keeping in the app team's repository after Beacon approval when we want durable Git evidence. It's derived from implementation config and enriched enough to be useful, but not so enriched that the app repo becomes a control-plane database.
 
 ```yaml
 apiVersion: network.company.com/v1
@@ -367,20 +407,28 @@ The approval block is intentionally immutable. If the destination changes materi
 
 ## Beacon Control-Plane Record
 
-Beacon stores the full control-plane record as canonical JSON. The record wraps the declared intent, enrichment snapshot, policy decision, generated artifact set, runtime state, and audit history. The full enrichment can live as an embedded JSON object or as a referenced snapshot with a content hash.
+Beacon stores the full control-plane record as canonical JSON. The record wraps the implementation source, derived intent, enrichment snapshot, policy decision, implementation hash, runtime state, and audit history. The full enrichment can live as an embedded JSON object or as a referenced snapshot with a content hash.
 
 ```json
 {
   "intentId": "ni-orders-to-payments",
   "currentPhase": "deployed",
-  "declaredIntent": {
+  "implementationSource": {
     "sourceRepo": "github.company.com/retail/orders-api",
-    "sourcePath": "network/intents/orders-to-payments.yaml",
+    "paths": [
+      "charts/orders/values.yaml",
+      "terraform/security-groups.tf"
+    ],
     "sourceCommit": "91c7e5d",
     "pullRequest": 1259,
     "submittedBy": "jane.engineer",
     "submittedAt": "2026-05-03T18:41:00Z"
   },
+  "derivedIntentRef": {
+    "intentName": "orders-to-payments",
+    "snapshotHash": "sha256:31a8..."
+  },
+  "implementationHash": "sha256:31a8...",
   "enrichmentRef": {
     "enrichmentId": "enr-20260503-184216",
     "createdAt": "2026-05-03T18:42:16Z",
@@ -440,19 +488,14 @@ Beacon stores the full control-plane record as canonical JSON. The record wraps 
     ],
     "signature": "beacon-signature:v1:MEUCIQD..."
   },
-  "artifactSet": {
-    "artifactSetId": "art-20260503-184231",
-    "generatedAt": "2026-05-03T18:42:31Z",
-    "artifacts": [
-      {
-        "kind": "IstioServiceEntry",
-        "target": "eks-prod-use1-retail-a",
-        "namespace": "orders",
-        "gitRepo": "github.company.com/platform/network-controls",
-        "gitPath": "generated/eks-prod-use1-retail-a/orders/serviceentry-orders-to-payments.yaml",
-        "contentHash": "sha256:abc123..."
-      }
-    ]
+  "extraction": {
+    "status": "complete",
+    "extractor": "helm-values:v1",
+    "implementation": {
+      "type": "helm-values",
+      "path": "charts/orders/values.yaml"
+    },
+    "findings": []
   },
   "runtimeState": {
     "phase": "deployed",
@@ -482,7 +525,7 @@ Beacon stores the full control-plane record as canonical JSON. The record wraps 
       "intent.submitted",
       "intent.enriched",
       "intent.approved",
-      "artifacts.generated",
+      "implementation.bound",
       "deployment.synced"
     ]
   }
@@ -496,9 +539,9 @@ Beacon should use a practical split:
 | Data | Store | Format |
 | --- | --- | --- |
 | Intent index, current phase, ownership, expiration | PostgreSQL | columns |
-| Declared and enriched snapshots | PostgreSQL JSONB or object storage | canonical JSON |
+| Implementation, derived intent, and enriched snapshots | PostgreSQL JSONB or object storage | canonical JSON |
 | Verdicts and approvals | PostgreSQL | columns plus JSONB |
-| Artifact manifests | PostgreSQL JSONB | canonical JSON |
+| Extraction results and implementation hashes | PostgreSQL JSONB | canonical JSON |
 | Runtime conditions | PostgreSQL | relational rows or JSONB |
 | Audit events | PostgreSQL append-only table or event stream | CloudEvents-style JSON |
 | Large evidence snapshots | S3-compatible object storage | JSON plus content hash |
@@ -519,10 +562,10 @@ input.spec.lifecycle.requestedTtlDays
 input.spec.path.inspectionRequired
 ```
 
-That keeps policy, compilers, assurance, and audit aligned on one contract.
+That keeps policy, delivery checks, assurance, and audit aligned on one contract.
 
 ## The Operating Rule
 
-The developer repo should answer: **what connectivity did this team request, and what did Beacon approve?**
+The developer repo should answer: **what implementation did this team author, and what did Beacon derive from it?**
 
-Beacon should answer: **what did we discover, why did we approve or deny it, what did we generate, what got deployed, and does reality still match the approved intent?**
+Beacon should answer: **what did we derive, what did we discover, why did we approve or deny it, which implementation hash did we bind to, what got deployed, and does reality still match the approved derived intent?**

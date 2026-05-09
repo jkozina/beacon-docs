@@ -6,17 +6,17 @@ export default function AssuranceModelDiagram() {
     <Diagram
       id="assurance-model"
       title="Assurance Model"
-      subtitle="Beacon continuously compares declared, approved, generated, deployed, and observed state."
+      subtitle="Beacon continuously compares implementation source, derived intent, approved verdict, deployed state, and observed runtime."
       viewBox="0 0 1210 600"
     >
       {(markerId) => (
         <>
-          <Card x={45} y={142} w={176} h={112} title="Declared" body={'GitHub intent with\nsource repo, centralId,\nworkload context,\nFQDN, port, and TTL.'} fill={palette.blueSoft} stroke={palette.blue} />
-          <Card x={254} y={142} w={176} h={112} title="Approved" body={'Beacon verdict with\npolicy bundle, owner\nrules, risk context,\nand expiration.'} fill={palette.greenSoft} stroke={palette.green} />
-          <Card x={463} y={142} w={176} h={112} title="Generated" body={'Compiler output with\nartifact hash, target\nPEP, annotations, and\nrendered diff.'} />
+          <Card x={45} y={142} w={176} h={112} title="Source Config" body={'Helm, Terraform,\nKubernetes, mesh, or\nplatform config from\nGitHub.'} fill={palette.blueSoft} stroke={palette.blue} />
+          <Card x={254} y={142} w={176} h={112} title="Derived Intent" body={'Extracted NetworkIntent\nwith source, FQDN,\nport, purpose, and\nrequested TTL.'} fill={palette.greenSoft} stroke={palette.green} />
+          <Card x={463} y={142} w={176} h={112} title="Approved" body={'Beacon verdict with\npolicy bundle, owner\nrules, risk context,\nand expiration.'} />
           <Card x={672} y={142} w={176} h={112} title="Deployed" body={'Actual PEP state from\nmesh, SGs, endpoint\npolicy, GCP, Illumio,\nor Palo Alto.'} fill={palette.goldSoft} stroke={palette.gold} />
           <Card x={881} y={142} w={176} h={112} title="Observed" body={'Traffic, logs, routes,\nPrisma posture, flow\nrecords, and service\nmesh telemetry.'} fill={palette.goldSoft} stroke={palette.gold} />
-          <Card x={350} y={390} w={240} h={112} title="Assurance Graph" body={'Connects source, target,\nverdict, artifact, PEP,\nroute, owner, asset, and\nobserved flow evidence.'} fill={palette.greenSoft} stroke={palette.green} />
+          <Card x={350} y={390} w={240} h={112} title="Assurance Graph" body={'Connects source config,\nderived intent, verdict,\nimplementation hash,\nPEP, route, owner,\nasset, and flows.'} fill={palette.greenSoft} stroke={palette.green} />
           <Card x={720} y={390} w={240} h={112} title="Findings" body={'Flags missing verdicts,\nroute bypass, expired\naccess, DNS drift, stale\nassets, and broad rules.'} fill={palette.redSoft} stroke={palette.red} />
           <Arrow x1={221} y1={198} x2={254} y2={198} markerId={markerId} />
           <Arrow x1={430} y1={198} x2={463} y2={198} markerId={markerId} />

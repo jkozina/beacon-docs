@@ -27,4 +27,4 @@ The hard part isn't one firewall. It's the fact that one connection can cross a 
 4. **Transitive controls stay broad.** We pre-pave corridor policy so ordinary app connectivity doesn't require transit firewall orchestration.
 5. **Verdict happens early.** We evaluate policy in GitHub/Terraform delivery flow before writing primary-control policy.
 6. **Explicit deny, implicit allow.** Our central policy model blocks known-bad patterns and records all verdicts for assurance.
-7. **Assurance is part of the design.** We don't stop at deployment. We prove runtime still matches approved intent.
+7. **Assurance is part of the design.** We don't stop at deployment. We prove runtime still matches approved derived intent.

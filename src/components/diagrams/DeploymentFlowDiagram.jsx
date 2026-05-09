@@ -17,7 +17,7 @@ export default function DeploymentFlowDiagram() {
             w={164}
             h={126}
             title="Open PR"
-            body={'Team declares FQDN,\nsource workload, port,\nprotocol, purpose, TTL,\nand business context.'}
+            body={'Team edits Helm,\nTerraform, Kubernetes,\nmesh, or platform config\nwith FQDN context.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
             badge="1"
@@ -27,8 +27,8 @@ export default function DeploymentFlowDiagram() {
             y={130}
             w={164}
             h={126}
-            title="Resolve"
-            body={'FQDN is mapped to\nowner, VIP, service,\ncloud resource, zone,\nand confidence score.'}
+            title="Extract + Resolve"
+            body={'Beacon Action derives\nintent, then maps FQDN\nto owner, service,\nzone, and confidence.'}
             fill={palette.goldSoft}
             stroke={palette.gold}
             badge="2"
@@ -45,14 +45,14 @@ export default function DeploymentFlowDiagram() {
             badge="3"
           />
           <Card x={622} y={86} w={168} h={94} title="Deny Path" body={'PR check fails with\nrule IDs, owner input,\nand remediation text.'} fill={palette.redSoft} stroke={palette.red} />
-          <Card x={622} y={224} w={168} h={94} title="Allow Path" body={'Compiler renders artifacts\nwith verdict ID, expiry,\nand metadata snapshot.'} fill={palette.greenSoft} stroke={palette.green} />
+          <Card x={622} y={224} w={168} h={94} title="Allow Path" body={'Verdict is signed with\nimplementation hash,\nexpiry, and metadata.'} fill={palette.greenSoft} stroke={palette.green} />
           <Card
             x={822}
             y={130}
             w={164}
             h={126}
             title="Apply"
-            body={'GitOps applies cluster\nand mesh resources; TFE\napplies cloud controls;\nSentinel checks plans.'}
+            body={'GitOps applies team\nconfig; TFE applies cloud\ncontrols; Sentinel checks\nplans and verdict tags.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
             badge="4"
@@ -63,7 +63,7 @@ export default function DeploymentFlowDiagram() {
             w={164}
             h={126}
             title="Assure"
-            body={'Runtime collectors compare\nPEP config, route state,\nflow logs, and posture\nto approved intent.'}
+            body={'Runtime collectors compare\nPEP config, route state,\nflow logs, and posture\nto approved derived intent.'}
             fill={palette.goldSoft}
             stroke={palette.gold}
             badge="5"

@@ -12,23 +12,24 @@ Assurance is how we keep this from becoming another write-only policy system.
 
 We need to compare five states:
 
-1. **Declared**: what the team requested.
-2. **Approved**: what Beacon PDP allowed and under which OPA policy bundle.
-3. **Generated**: what the compiler produced.
-4. **Deployed**: what the PEPs actually contain.
-5. **Observed**: what traffic, logs, routes, and telemetry show.
+1. **Implementation Source**: what the team wrote in Helm, Terraform, Kubernetes, mesh, or platform config.
+2. **Derived Intent**: what `NetworkIntent` Beacon extracted from that implementation.
+3. **Approved Verdict**: what Beacon PDP allowed and under which OPA policy bundle.
+4. **Deployed State**: what the PEPs actually contain.
+5. **Observed Runtime**: what traffic, logs, routes, and telemetry show.
 
 <AssuranceModelDiagram />
 
 ## Findings We Care About
 
-- deployed rule with no declared intent
-- approved intent not deployed
+- deployed rule with no derived intent
+- deployed implementation hash that doesn't match the signed verdict
+- approved derived intent not deployed
 - observed flow with no current verdict
 - expired verdict still active
 - FQDN now resolves to a different owner, VIP, or compliance domain
 - route bypasses required Palo Alto inspection
-- endpoint policy or SG is broader than approved intent
+- endpoint policy or SG is broader than approved derived intent
 - ServiceNow says an asset is retired but traffic is still active
 - Prisma sees a risky exposure tied to an approved path
 

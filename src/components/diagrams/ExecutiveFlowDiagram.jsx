@@ -6,7 +6,7 @@ export default function ExecutiveFlowDiagram() {
     <Diagram
       id="executive-flow"
       title="Beacon End-to-End Flow"
-      subtitle="Developers declare FQDN-first intent; Beacon resolves, enriches, verdicts, deploys, and continuously proves the result."
+      subtitle="Developers author implementation config; Beacon derives intent, binds verdicts to implementation hashes, and continuously proves the result."
       viewBox="0 0 1280 610"
     >
       {(markerId) => (
@@ -16,8 +16,8 @@ export default function ExecutiveFlowDiagram() {
             y={125}
             w={176}
             h={138}
-            title="Developer Intent"
-            body={'Team declares the known\nfacts: source workload,\nFQDN, port, protocol,\npurpose, TTL, data class.'}
+            title="Implementation Config"
+            body={'Team writes Helm,\nTerraform, Kubernetes,\nmesh, or platform config\nwith FQDN and purpose.'}
             fill={palette.tealSoft}
             stroke={palette.teal}
             badge="1"
@@ -28,7 +28,7 @@ export default function ExecutiveFlowDiagram() {
             w={176}
             h={138}
             title="CI Validation"
-            body={'GitHub Actions checks\nschema, repo ownership,\nsource identity, required\nfields, and TTL bounds.'}
+            body={'GitHub Actions extracts\nintent, checks schema,\nrepo ownership, source\nidentity, and TTL bounds.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
             badge="2"
@@ -65,14 +65,14 @@ export default function ExecutiveFlowDiagram() {
             badge="5"
           />
           <Card x={1110} y={83} w={138} h={96} title="Deny" body={'PR check fails with\npolicy IDs, owner,\nand remediation hints.'} fill={palette.redSoft} stroke={palette.red} />
-          <Card x={1110} y={224} w={138} h={96} title="Allow" body={'Compiler receives a\nverdict ID, expiry,\nand metadata snapshot.'} fill={palette.greenSoft} stroke={palette.green} />
+          <Card x={1110} y={224} w={138} h={96} title="Allow" body={'Delivery receives a\nhash-bound verdict,\nexpiry, and metadata\nsnapshot.'} fill={palette.greenSoft} stroke={palette.green} />
           <Card
             x={282}
             y={408}
             w={196}
             h={120}
             title="Delivery Rails"
-            body={'GitOps handles mesh\nand Kubernetes artifacts;\nTFE handles provider and\ncloud-managed controls.'}
+            body={'GitOps handles team\nmesh and Kubernetes config;\nTFE handles provider and\ncloud-managed controls.'}
             fill={palette.blueSoft}
             stroke={palette.blue}
           />
@@ -82,7 +82,7 @@ export default function ExecutiveFlowDiagram() {
             w={196}
             h={120}
             title="Primary Controls"
-            body={'Specific policy lands at\nServiceEntry, endpoint\npolicy, SG, GCP policy,\nPSC, or Illumio.'}
+            body={'Validated policy lands at\nServiceEntry, endpoint\npolicy, SG, GCP policy,\nPSC, or Illumio.'}
           />
           <Card
             x={802}
@@ -90,7 +90,7 @@ export default function ExecutiveFlowDiagram() {
             w={196}
             h={120}
             title="Assurance"
-            body={'Collectors compare declared,\napproved, generated,\ndeployed, and observed\nstate for drift.'}
+            body={'Collectors compare source,\nderived, approved,\ndeployed, and observed\nstate for drift.'}
             fill={palette.goldSoft}
             stroke={palette.gold}
           />

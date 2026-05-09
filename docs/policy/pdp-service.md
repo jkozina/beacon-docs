@@ -8,20 +8,21 @@ description: "Where OPA evaluation runs and how Beacon turns policy into signed 
 
 Authoritative OPA evaluation runs inside a managed **Beacon PDP service**, not directly inside every application repository.
 
-GitHub Actions remains the developer-facing experience. The Action packages intent, repo context, commit SHA, and workflow metadata, then calls Beacon. The managed PDP performs the policy decision and records the evidence.
+GitHub Actions remains the developer-facing experience. The Action derives intent from implementation config, packages repo context, commit SHA, and workflow metadata, then calls Beacon. The managed PDP performs the policy decision and records the evidence.
 
 ## Evaluation Boundary
 
 ```text
 Developer PR
   -> GitHub Action wrapper
+  -> intent extraction from Helm/Terraform/Kubernetes/platform config
   -> Beacon resolver and enrichment
   -> Beacon PDP API
        -> OPA policy bundle evaluation
        -> decision logging
        -> verdict signing
   -> PR check result
-  -> compiler and delivery rails
+  -> developer-owned delivery rails
 ```
 
 The PDP owns the decision. The Action owns developer ergonomics.
@@ -43,7 +44,7 @@ A managed PDP gives us one place to control:
 
 The app repository should not need direct access to sensitive metadata sources. It should receive a clear allow or deny response with enough remediation detail to move forward.
 
-The longer ownership model is captured in [Intent Model](../architecture/intent-model.md). Beacon owns the complete control-plane record; developer repositories only need the stable approved intent and optional signed approval proof.
+The longer ownership model is captured in [Intent Model](../architecture/intent-model.md). Beacon owns the complete control-plane record; developer repositories own implementation config and may keep optional derived intent or signed approval proof.
 
 ## Runtime Pattern
 
@@ -72,7 +73,7 @@ For our platform, **Beacon PDP API plus OPA sidecar** or **embedded OPA** are th
 
 ## JSON Input And Verdict Output
 
-The PDP receives canonical JSON generated from the enriched `NetworkIntent` model. It doesn't receive YAML, and it doesn't perform broad metadata discovery itself. The JSON payload keeps the same field hierarchy as the YAML examples so policy, compilers, and audit use one contract.
+The PDP receives canonical JSON generated from the enriched `NetworkIntent` model. It doesn't receive YAML, and it doesn't perform broad metadata discovery itself. The JSON payload keeps the same field hierarchy as the YAML examples so policy, delivery checks, and audit use one contract.
 
 Input fields:
 
@@ -137,7 +138,7 @@ Verdict output:
 
 ## Verdict Contract
 
-Every allowed request should produce a durable verdict record. Downstream compilers should only generate policy when a current verdict exists.
+Every allowed request should produce a durable verdict record. Downstream delivery controls should only proceed when a current signed verdict exists for the implementation hash being deployed.
 
 ```json
 {
@@ -168,17 +169,11 @@ Every allowed request should produce a durable verdict record. Downstream compil
       }
     ]
   },
-  "artifactPlan": [
-    {
-      "pep": "istio-serviceentry",
-      "scope": "orders/prod"
-    }
-  ],
   "signature": "..."
 }
 ```
 
-The signature matters because delivery systems and assurance jobs need to know that an artifact came from a real Beacon decision, not from a copied JSON blob.
+The signature matters because delivery systems and assurance jobs need to know the implementation is tied to a real Beacon decision, not a copied JSON blob.
 
 ## Failure Modes
 
@@ -190,7 +185,8 @@ The PDP should fail closed when it cannot make a trustworthy decision.
 | Metadata confidence is too low for the environment | Deny or require exception. |
 | Policy bundle cannot be loaded | Fail the PR check. |
 | PDP is unavailable | Fail the PR check and mark as platform unavailable. |
-| Verdict is expired | Compiler refuses to generate or apply artifacts. |
+| Verdict is expired | Delivery checks refuse to apply or continue active access. |
+| Implementation hash changed | Re-run extraction and verdict before delivery. |
 | Metadata changed materially after approval | Assurance opens a drift finding. |
 
-That gives us a clean rule: if Beacon cannot explain and record the decision, we don't deploy new connectivity.
+That gives us a clean rule: if Beacon cannot explain the decision or bind it to the implementation hash, we don't deploy new connectivity.

@@ -12,12 +12,13 @@ We're building **Beacon**, our Enterprise Connectivity Control Plane, because th
 
 The model we're aiming for is simple:
 
-- Developers declare the connection they need in code.
+- Developers define connectivity in the implementation config they already own.
+- Beacon derives canonical intent from that implementation.
 - We resolve the destination and enrich the request with enterprise metadata.
 - We make the network security verdict early, before a control is deployed.
-- We write specific policy only to the right primary control.
+- We bind the verdict to the implementation hash that produced the derived intent.
 - We keep transitive firewalls broad, stable, and pre-paved.
-- We continuously prove that declared, approved, deployed, and observed states still line up.
+- We continuously prove that derived, approved, implemented, deployed, and observed states still line up.
 
 ## The Story In One Diagram
 
@@ -29,15 +30,15 @@ The key move is separating **specific app intent** from **stable transit policy*
 
 Specific intent belongs near the source or protected destination: Istio ServiceEntry, VPC endpoint policy, Lambda or workload security group, Illumio policy, or a targeted GCP control. Transitive controls like Palo Alto GWLB firewalls, Equinix transit firewalls, and data center segmentation firewalls shouldn't churn every time an app team needs a new connection. Those controls should carry broad enterprise corridor rules and inspection requirements.
 
-That gives us developer speed without giving up control. App teams work in GitHub. Security gets a real verdict before policy lands. Network teams stop taking low-value app-specific firewall changes on transit devices. Audit gets a chain of evidence from request to runtime.
+That gives us developer speed without giving up control. App teams work in GitHub and keep ownership of Helm, Terraform, Kubernetes, and mesh configuration. Security gets a real verdict bound to the implementation before policy lands. Network teams stop taking low-value app-specific firewall changes on transit devices. Audit gets a chain of evidence from implementation source to runtime.
 
 ## What We Get
 
 | Outcome | Why it matters |
 | --- | --- |
-| Faster delivery | Teams request connectivity in GitHub using the destination FQDN they already know. |
-| Stronger security | We block bad intent before policy is written to primary controls. |
+| Faster delivery | Teams keep using their normal implementation workflow while Beacon derives the FQDN-first intent. |
+| Stronger security | We block bad intent and unsupported or lossy extraction before controls are deployed. |
 | Lower firewall churn | Transit firewalls carry stable corridor policy instead of app-specific rules. |
 | Better metadata | Unknown owners, ambiguous FQDNs, and stale asset records become measurable work. |
-| Cleaner audit | We can trace an allow from declaration to verdict to deployed control to observed flow. |
-| Safer scale | AWS, GCP, EKS, OpenShift, Palo Alto, Illumio, and mesh differences sit behind compilers and assurance. |
+| Cleaner audit | We can trace an allow from implementation source to derived intent to verdict to deployed control to observed flow. |
+| Safer scale | AWS, GCP, EKS, OpenShift, Palo Alto, Illumio, and mesh differences sit behind extractors, verdict binding, and assurance. |

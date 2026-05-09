@@ -6,7 +6,7 @@ description: "How Rego policy should be structured for Beacon verdicting."
 
 # OPA Policy Model
 
-OPA policy is owned centrally. App teams declare connectivity intent; platform, security, network, and destination owners maintain the policy that decides whether that intent is acceptable.
+OPA policy is owned centrally. App teams author implementation config; Beacon derives connectivity intent; platform, security, network, and destination owners maintain the policy that decides whether that derived intent is acceptable.
 
 ## Repository Layout
 
@@ -51,9 +51,9 @@ That repo builds signed OPA bundles. The Beacon PDP loads only signed, approved 
 
 ## Input Shape
 
-OPA evaluates the canonical enriched `NetworkIntent` envelope described in [Intent Model](../architecture/intent-model.md#beacon-enriched-intent). In practice, Beacon serializes that YAML-shaped object as JSON before sending it to the PDP.
+OPA evaluates the canonical enriched `NetworkIntent` envelope described in [Intent Model](../architecture/intent-model.md#beacon-enriched-intent). In the common path, that `NetworkIntent` is derived from Helm, Terraform, Kubernetes, mesh, or platform config. Beacon serializes the YAML-shaped object as JSON before sending it to the PDP.
 
-That means policy should reference the same key hierarchy used by controllers, compilers, and assurance:
+That means policy should reference the same key hierarchy used by delivery checks and assurance:
 
 | Policy Need | Canonical Field |
 | --- | --- |
