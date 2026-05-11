@@ -16,8 +16,9 @@ const architectureSidebar = [
     collapsed: false,
     items: [
       'architecture/end-to-end-architecture',
-      'architecture/control-placement',
       'architecture/intent-model',
+      'architecture/control-plane-records',
+      'architecture/control-placement',
     ],
   },
   {

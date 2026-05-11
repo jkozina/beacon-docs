@@ -6,28 +6,27 @@ description: "How developer PRs derive intent from implementation config and cal
 
 # GitHub Action Verdict
 
-Developer teams should interact with Beacon through a reusable GitHub Action or reusable workflow. That gives them a normal PR check without making every app repository understand OPA, metadata joins, or Beacon's internal data model.
+Developer teams interact with Beacon through a reusable GitHub Action or reusable workflow. They get a normal PR check without needing to understand OPA, metadata joins, or Beacon's internal data model.
 
 ## What The Action Does
 
-The Action should stay thin. It isn't the authoritative policy engine.
-
-Responsibilities:
-
-- find changed implementation files
-- parse supported Helm values, Terraform, Kubernetes manifests, mesh config, or platform config
-- derive one or more `NetworkIntent` objects
-- validate derived intent schema and required fields
-- fail closed when extraction is unsupported, lossy, or incomplete
-- compute the implementation hash
-- attach repo, PR, commit, actor, and workflow context
-- call Beacon resolver and enrichment
-- call Beacon PDP API
-- fail the check on deny
-- post human-readable remediation
-- save derived intent, signed verdict, extraction result, and implementation hash for audit
+The Action should stay thin. It finds changed implementation files, extracts one or more `NetworkIntent` objects, validates the result, computes the implementation hash, attaches repo context, calls Beacon, and posts allow/deny feedback.
 
 The managed Beacon PDP service owns OPA evaluation and decision logging.
+
+## Strict Extraction
+
+Extraction is mandatory and fail-closed. If Beacon can't safely derive the full intent from the implementation, the PR fails before policy evaluation.
+
+Strict extraction rules:
+
+- unsupported implementation patterns fail
+- wildcard hosts fail unless explicitly supported by policy
+- CIDR-only destinations fail unless an approved FQDN or destination identity is present
+- ambiguous source workload scope fails
+- missing business justification or TTL fails
+- one implementation file may produce multiple derived intents
+- the extracted intent must be faithful to the implementation artifact
 
 ## Example Developer Workflow
 
@@ -65,27 +64,6 @@ jobs:
 
 The Action can authenticate to Beacon using OIDC. That lets Beacon know which repo, branch, and workflow identity made the request without storing long-lived tokens in app repositories.
 
-The Action shouldn't turn the app repo into Beacon's runtime database. The write-back boundary is defined in [Intent Model](../architecture/intent-model.md): implementation config and optional derived intent or approval evidence can live in Git, while mutable enrichment, runtime status, drift, and audit live in Beacon.
-
-## API Calls
-
-The Action can call one combined API or two explicit APIs.
-
-Combined API:
-
-```text
-POST /v1/verdict
-```
-
-Separate APIs:
-
-```text
-POST /v1/resolve
-POST /v1/verdict
-```
-
-Use separate internal stages behind one Action-level command. That way the PR output can tell the developer whether they failed resolution, enrichment, or policy.
-
 ## PR Output
 
 On deny, the Action should return a concise PR comment:
@@ -103,15 +81,7 @@ How to fix:
 - Request a temporary exception with the destination owner.
 ```
 
-On allow, the Action should avoid noisy comments by default. The check summary should include:
-
-- decision ID
-- policy bundle version
-- primary and transitive controls
-- expiration
-- extraction status
-- implementation hash
-- derived intent summary
+On allow, the Action should avoid noisy comments by default. The check summary should include decision ID, policy bundle, controls, expiration, extraction status, implementation hash, and derived intent summary.
 
 ## Workflow Artifacts
 
@@ -128,16 +98,3 @@ The Action should save derived intent, verdict, extraction output, and implement
 ```
 
 The developer-owned deployment pipeline can consume the signed verdict and implementation hash, but it still applies the team's Helm/Terraform/Kubernetes implementation. Beacon doesn't render the implementation for them.
-
-## Recommended Split
-
-| Layer | Responsibility |
-| --- | --- |
-| App repo workflow | Calls Beacon and reports PR status. |
-| Beacon Action | Strictly extracts intent, computes implementation hash, calls Beacon, and handles PR ergonomics. |
-| Beacon APIs | Resolution, enrichment, PDP call, extraction evidence, decision record. |
-| OPA | Policy evaluation over enriched input. |
-| Verdict binding | Ties the signed verdict to the implementation hash that produced the derived intent. |
-| GitOps/TFE | Applies developer-owned implementation artifacts. |
-
-This keeps the developer workflow simple while keeping the actual verdict centralized, auditable, and replayable.
