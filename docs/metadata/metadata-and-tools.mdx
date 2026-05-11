@@ -24,13 +24,6 @@ ServiceNow is also a good workflow destination. If we find an internal FQDN with
 
 We should use Prisma as a public cloud inventory and posture source for AWS and GCP. It helps us see cloud resources, tags, security groups, load balancers, endpoints, exposure signals, and posture findings. We still need cloud-native sources like AWS Config, CloudTrail, VPC Flow Logs, GCP Cloud Asset Inventory, routes, and firewall logs for authoritative detail.
 
-## Stores
+## Storage Boundary
 
-| Need | Store |
-| --- | --- |
-| Implementation config, derived intent evidence, and PR history | GitHub Enterprise |
-| Verdict records | PostgreSQL-compatible store |
-| Destination registry | PostgreSQL plus graph projection |
-| Resolution cache | PostgreSQL or document store with TTL |
-| Relationship model | Graph database |
-| Runtime inventory and flow history | Object storage, data lake, SIEM, OpenSearch, ClickHouse, or Snowflake |
+This page is about metadata sources and flow. The durable Git write-back, Beacon control-plane record, and storage format are covered in [Control-Plane Records](../architecture/control-plane-records.md).

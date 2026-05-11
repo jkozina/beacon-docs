@@ -9,13 +9,11 @@ import SystemDesignIOFlowDiagram from '@site/src/components/diagrams/SystemDesig
 
 # End-To-End Architecture
 
-We're building Beacon as the enterprise connectivity control plane. It doesn't replace Palo Alto, Istio, security groups, endpoint policies, GCP firewall rules, PSC, or Illumio. It gives us one consistent way to extract connectivity intent, enrich it, verdict it, bind the approval to the implementation, and keep proving the network still matches what was approved.
-
-The core rule is simple:
+Beacon is our enterprise connectivity control plane. It doesn't replace Palo Alto, Istio, security groups, endpoint policies, GCP firewall rules, PSC, or Illumio. It gives us one consistent path to extract connectivity intent, enrich it, verdict it, bind the approval to the implementation, and assure runtime.
 
 > Developers author implementation configuration. Beacon strictly derives `NetworkIntent`, evaluates policy, binds the verdict to the implementation hash, and continuously assures runtime.
 
-`NetworkIntent` is central, but it's the canonical intermediate contract. In the common path, developers don't hand-write it. They write Helm values, Terraform, Kubernetes manifests, Kustomize overlays, mesh config, or platform config. The Beacon GitHub Action extracts intent from those files and sends the derived intent to Beacon.
+In the common path, developers don't hand-write `NetworkIntent`. They write Helm values, Terraform, Kubernetes manifests, Kustomize overlays, mesh config, or platform config. The Beacon GitHub Action extracts intent from those files and sends the derived intent to Beacon.
 
 <ArchitectureFlowDiagram />
 
@@ -24,223 +22,55 @@ The core rule is simple:
 | Component | What we use it for |
 | --- | --- |
 | GitHub Enterprise | Source of record for implementation config, review history, workflow artifacts, policy bundles, and verdict evidence. |
-| GitHub Actions | Fast PR feedback: strict extraction, schema checks, destination resolution, enrichment, Beacon verdict, and verdict binding. |
-| Intent Extractor | Derives `NetworkIntent` from Helm values, Terraform, Kubernetes manifests, mesh config, or platform config. |
+| GitHub Actions | PR feedback: strict extraction, schema checks, destination resolution, enrichment, Beacon verdict, and verdict binding. |
+| Intent Extractor | Derives `NetworkIntent` from supported implementation config. |
 | Destination Resolver | Turns FQDN-first intent into policy-ready destination identity. |
-| Metadata Enrichment | Adds source, owner, environment, tenant, compliance, asset, posture, cloud, and route context. |
-| Beacon API | Owns request normalization, enrichment orchestration, verdict records, extraction evidence, and assurance state. |
-| Beacon PDP API | Managed verdict service that wraps OPA, logs decisions, signs verdicts, and returns allow/deny. |
-| OPA | Policy engine that evaluates enriched connectivity intent inside the Beacon PDP boundary. |
+| Metadata Enrichment | Adds ownership, environment, tenant, compliance, asset, posture, cloud, and route context. |
+| Beacon API | Normalizes requests, orchestrates enrichment, stores records, and drives assurance. |
+| Beacon PDP API | Wraps OPA, logs decisions, signs verdicts, and returns allow/deny. |
 | Terraform Enterprise + Sentinel | Applies developer-owned cloud/provider controls and blocks bad plan shapes. |
-| Gatekeeper | Blocks unmanaged Kubernetes and mesh resources that bypass the approved path. |
-| Assurance Graph | Ties together implementation config, derived intent, hash-bound verdicts, deployed config, routes, logs, and flows. |
+| Gatekeeper | Blocks unmanaged Kubernetes and mesh resources that bypass Beacon. |
+| Assurance Graph | Links implementation config, derived intent, verdicts, deployed config, routes, logs, and flows. |
 
 ## Input/Output Model
 
 <SystemDesignIOFlowDiagram />
 
-Beacon works because every stage produces a durable record. We don't treat the PR check as the system of record.
+Beacon works because every stage produces a durable record. The PR check is feedback; the control-plane records are the system of record.
 
 | Record | Format | Owner | Purpose |
 | --- | --- | --- | --- |
-| Implementation config | YAML, HCL, JSON | App team | Developer-owned Helm values, Terraform, Kubernetes, mesh, or platform config. |
-| Extraction result | JSON | Beacon Action | Whether Beacon could completely and safely derive intent from implementation config. |
+| Implementation config | YAML, HCL, JSON | App team | Developer-owned Helm, Terraform, Kubernetes, mesh, or platform config. |
+| Extraction result | JSON | Beacon Action | Whether Beacon safely derived intent from implementation config. |
 | Derived `NetworkIntent` | YAML/JSON | Beacon Action | Canonical intent extracted from implementation config. |
 | Canonical request | JSON | Beacon API | Derived intent plus repo, PR, actor, commit, workflow context, and implementation hash. |
-| Enrichment snapshot | JSON | Beacon enrichment | Source and destination metadata from DNS, ServiceNow, Prisma, cloud, IPAM, catalog, and identity. |
-| PDP input | JSON | Beacon PDP | Policy-ready envelope with the same hierarchy as the enriched `NetworkIntent` model. |
-| Verdict | JSON | Beacon PDP | Signed allow/deny result, TTL bounds, controls, matched rules, bundle version, metadata hash, and implementation hash. |
+| Enrichment snapshot | JSON | Beacon enrichment | Metadata from DNS, ServiceNow, Prisma, cloud, IPAM, catalog, and identity. |
+| Verdict | JSON | Beacon PDP | Signed allow/deny result, controls, matched rules, metadata hash, and implementation hash. |
 | Runtime state | JSON | Beacon assurance | Deployed PEP state, sync status, observed flows, routes, posture, and drift findings. |
+
+The detailed Git write-back, Beacon-owned record, and storage model lives in [Control-Plane Records](./control-plane-records.md).
 
 ## End-To-End Workflow
 
 | Stage | Input | Processing | Output |
 | --- | --- | --- | --- |
-| 1. Implement | Helm values, Terraform, Kubernetes manifests, or platform config | Developer defines connectivity in their normal repo workflow. | Developer-owned implementation artifact. |
-| 2. Extract | Changed implementation files | Beacon Action strictly parses supported files and derives one or more `NetworkIntent` objects. | Derived `NetworkIntent`, implementation hash, and extraction result. |
-| 3. Resolve | Derived intent, source context, protocol, port | Resolver checks DNS views, CNAMEs, IPAM, ingress, load balancers, PSC, and service catalogs. | Destination identity and resolution confidence. |
-| 4. Enrich | Canonical request plus destination identity | Beacon joins ServiceNow, Prisma, cloud inventory, IAM, Kubernetes, OpenShift, Illumio, and policy metadata. | Enrichment snapshot JSON. |
-| 5. Verdict | Enriched JSON envelope plus implementation hash | Beacon PDP evaluates signed OPA bundles and exception context. | Signed allow/deny verdict bound to implementation hash. |
-| 6. Deploy | Same developer-owned implementation | Existing GitOps, Helm, Terraform Enterprise, and platform pipelines deploy after merge. | Deployed primary and transitive controls. |
-| 7. Assure | Derived, approved, deployed, and observed states | Assurance compares records and telemetry over time. | Drift findings, cleanup tasks, expiration events, replayable evidence. |
+| 1. Implement | Helm, Terraform, Kubernetes, mesh, or platform config | Developer defines connectivity in their normal repo workflow. | Developer-owned implementation artifact. |
+| 2. Extract | Changed implementation files | Beacon Action strictly derives one or more `NetworkIntent` objects. | Derived intent, implementation hash, extraction result. |
+| 3. Resolve | Derived intent and source context | Resolver checks DNS, IPAM, ingress, load balancers, PSC, and catalogs. | Destination identity and confidence. |
+| 4. Enrich | Canonical request plus destination identity | Beacon joins ServiceNow, Prisma, cloud, IAM, Kubernetes, OpenShift, Illumio, and policy metadata. | Enrichment snapshot. |
+| 5. Verdict | Enriched JSON plus implementation hash | Beacon PDP evaluates signed OPA bundles and exception context. | Signed verdict bound to implementation hash. |
+| 6. Deploy | Same developer-owned implementation | GitOps, Helm, Terraform Enterprise, and platform pipelines deploy after merge. | Deployed primary and transitive controls. |
+| 7. Assure | Approved, deployed, and observed states | Assurance compares records and telemetry over time. | Drift findings, cleanup tasks, expiration events, replayable evidence. |
 
-## Developer Implementation
+## Design Boundaries
 
-The developer input stays implementation-native. Teams use the tools they already own.
-
-```yaml
-egress:
-  allow:
-    - name: payments
-      host: payments-api.prod.company.internal
-      port: 443
-      protocol: HTTPS
-      justification: Submit payment authorization requests
-      ttlDays: 30
-```
-
-The common path is not "developer writes a new CRD by hand." The common path is "Beacon extracts intent from the implementation the developer already had to write."
-
-## Strict Extraction
-
-Extraction is mandatory and fail-closed. If Beacon can't derive complete and safe intent from implementation config, the PR fails before policy evaluation.
-
-Strict extraction rules:
-
-- unsupported implementation patterns fail
-- wildcard hosts fail unless explicitly supported by policy
-- CIDR-only destinations fail unless an approved FQDN or destination identity is present
-- ambiguous source workload scope fails
-- missing business justification or TTL fails
-- one implementation file may produce multiple derived intents
-- the extracted intent must be faithful to the implementation artifact
-
-The Beacon Action turns implementation-native config into a canonical `NetworkIntent`. This object can be stored as a workflow artifact, posted in the check summary, and sent to Beacon as JSON.
-
-```yaml
-apiVersion: network.company.com/v1
-kind: NetworkIntent
-metadata:
-  name: orders-to-payments
-spec:
-  source:
-    workloadId: orders-api
-    namespace: orders
-    serviceAccount: orders-api
-  destination:
-    fqdn: payments-api.prod.company.internal
-  traffic:
-    protocol: TCP
-    port: 443
-    applicationProtocol: HTTPS
-  purpose:
-    businessJustification: Submit payment authorization requests
-  lifecycle:
-    requestedTtlDays: 30
-```
-
-Directly authored `NetworkIntent` should still be supported for advanced use cases, shared platform modules, and implementation types without an extractor. It just shouldn't be the default developer burden.
-
-## Canonical Request And PDP Input
-
-GitHub Actions adds workflow context and an implementation hash before calling Beacon.
-
-```json
-{
-  "repository": "retail/orders-api",
-  "pullRequest": 1259,
-  "commit": "91c7e5d",
-  "actor": "jane.engineer",
-  "workflowRunId": "982901771",
-  "implementationPaths": [
-    "charts/orders/values.yaml",
-    "terraform/security-groups.tf"
-  ],
-  "implementationHash": "sha256:31a8..."
-}
-```
-
-The Beacon PDP receives canonical JSON, not YAML. The field hierarchy mirrors the enriched `NetworkIntent` model so Rego, delivery checks, and audit all speak the same shape.
-
-## Resolution And Enrichment
-
-Resolution answers: **what is this FQDN?**
-
-Enrichment answers: **what do we know about the source, destination, path, ownership, risk, and required controls?**
-
-Primary inputs:
-
-- DNS, private zones, split-horizon views, and CNAME chains
-- IPAM, VIP systems, service catalogs, Kubernetes/OpenShift ingress
-- AWS/GCP resource inventory, tags, VPC endpoints, load balancers, PSC
-- ServiceNow ITAM ownership, lifecycle, business service, support group
-- Prisma cloud inventory, exposure, posture findings
-- Illumio labels, Palo Alto objects/logs, existing mesh/service registry
-
-Primary outputs:
-
-- `resolution.status` and `resolution.confidence`
-- canonical destination service identity
-- source and destination owners
-- environment, tenant, compliance domain, trust zone, data classification
-- expected primary control
-- required transitive controls
-- inspection requirement and route posture
-- metadata snapshot hash
-
-## Verdict Binding And Delivery
-
-Beacon doesn't implement the connection. It binds the signed verdict to the exact implementation hash it evaluated.
-
-Delivery checks verify:
-
-- the verdict is current
-- the policy bundle is accepted
-- the implementation hash matches the artifact being deployed
-- required Beacon annotations or tags are present
-- the verdict has not expired
-
-Delivery uses existing developer-owned rails:
-
-- Helm, GitOps, and platform pipelines apply Kubernetes, OpenShift, and mesh resources.
-- Terraform Enterprise applies cloud/provider-managed controls from developer-owned Terraform.
-- Sentinel blocks Terraform plans that bypass approved modules or omit Beacon verdict metadata.
-- Gatekeeper blocks unmanaged Kubernetes and mesh resources that bypass Beacon.
-
-The key invariant: **Beacon approves the derived intent and binds that approval to the implementation; developer-owned delivery systems implement.**
-
-## Day-2 Assurance
-
-Day-2 assurance compares five states:
-
-| State | Question |
+| Boundary | Rule |
 | --- | --- |
-| Implementation Source | What did the team put in Helm, Terraform, Kubernetes, or platform config? |
-| Derived Intent | What `NetworkIntent` did Beacon extract from that implementation? |
-| Approved Verdict | What did Beacon allow, under which policy bundle and metadata snapshot? |
-| Deployed State | What do the PEPs actually contain? |
-| Observed Runtime | What do flows, routes, logs, and posture systems show? |
-
-Assurance outputs:
-
-- deployed rule with no current approved derived intent
-- deployed artifact whose hash doesn't match the signed verdict
-- approved derived intent that never deployed
-- expired verdict still active
-- observed flow with no verdict
-- FQDN now resolving to a different owner, VIP, or compliance domain
-- route bypassing required inspection
-- cloud or mesh policy broader than the approved path
-- retired ServiceNow asset still receiving traffic
-- Prisma exposure finding tied to an approved path
-
-## System Boundaries
-
-| Boundary | Design rule |
-| --- | --- |
-| App repo | Stores implementation config and optional derived intent or approval evidence. It doesn't store runtime status. |
-| Beacon Action | Strictly extracts intent, computes implementation hash, calls Beacon, and reports PR findings. |
-| Beacon API | Owns request normalization, enrichment orchestration, verdict records, extraction evidence, and assurance state. |
+| App repo | Stores implementation config and optional derived intent or approval proof; not runtime status. |
+| Beacon Action | Extracts intent, computes implementation hash, calls Beacon, and reports PR findings. |
+| Beacon API | Owns enrichment, verdict records, extraction evidence, and assurance state. |
 | Beacon PDP | Owns the authoritative allow/deny decision over canonical JSON. |
 | Delivery rails | Apply developer-owned implementation artifacts and verify verdict binding. |
-| Assurance | Continuously proves runtime still matches approved derived intent. |
+| Assurance | Proves runtime still matches approved derived intent. |
 
-## Failure Behavior
-
-Beacon should fail closed when it can't produce a trustworthy decision.
-
-| Failure | Behavior |
-| --- | --- |
-| Intent cannot be extracted | Fail the PR and show which implementation fields are missing. |
-| Extraction is lossy or unsupported | Fail the PR rather than guessing. |
-| FQDN unresolved or ambiguous | Deny and ask for registration or disambiguation. |
-| Source ownership missing | Deny until ownership metadata is fixed. |
-| Destination confidence too low | Deny for production or sensitive paths; allow low-risk paths only by policy. |
-| ServiceNow says destination is retired | Deny new access and open cleanup workflow. |
-| Prisma reports unexpected public exposure | Deny or require exception based on severity. |
-| PDP unavailable | Fail the PR check as platform unavailable. |
-| Implementation hash changed after verdict | Re-run extraction and verdict before delivery. |
-| Verdict expired | Delivery and assurance block or flag active controls. |
-| Runtime drift detected | Open finding, notify owners, and optionally remove or quarantine stale controls. |
-
-The practical outcome: Beacon is not an artifact generator and doesn't need a separate post-verdict implementation validation pass. It's the control plane that derives intent strictly, explains the decision, binds the decision to the implementation, and keeps proving the network still matches the approved derived intent.
+The practical outcome: Beacon is not an artifact generator. It derives intent strictly, explains the decision, binds the decision to the implementation, and keeps proving the network still matches the approved derived intent.
