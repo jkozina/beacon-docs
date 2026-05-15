@@ -1004,6 +1004,8 @@ Expected: `Version: 0.66.0` (or your pinned version).
 Create `beacon-app/tests/test_opa_runner.py`:
 
 ```python
+import copy
+
 from pdp.opa_runner import evaluate
 
 
@@ -1017,18 +1019,20 @@ SAMPLE_INPUT = {
 
 
 def test_evaluate_returns_deny_for_long_ttl():
-    result = evaluate(SAMPLE_INPUT)
+    result = evaluate(copy.deepcopy(SAMPLE_INPUT))
     assert result["allow"] is False
     deny_ids = [d["id"] for d in result["deny"]]
     assert "TTL_EXCEEDS_MAX" in deny_ids
 
 
 def test_evaluate_returns_allow_for_short_ttl():
-    short = dict(SAMPLE_INPUT)
+    short = copy.deepcopy(SAMPLE_INPUT)
     short["spec"]["lifecycle"]["requestedTtlDays"] = 30
     result = evaluate(short)
     assert result["allow"] is True
 ```
+
+> **Why `copy.deepcopy` (not `dict(SAMPLE_INPUT)`).** A shallow copy shares the nested `spec.lifecycle` dict. Mutating `short["spec"]["lifecycle"]["requestedTtlDays"] = 30` would also mutate `SAMPLE_INPUT`, making the deny test order-dependent and breaking under `pytest --random-order` or any test reordering. `deepcopy` keeps the tests independent.
 
 - [ ] **Step 4: Run the test; expect ImportError**
 
@@ -1244,7 +1248,7 @@ Run the same `curl` but with `"requestedTtlDays": 120`. Expected: `false`, deny 
 PYTHONPATH=. pytest tests/ -v
 ```
 
-Expected: 4 passed.
+Expected: 5 passed (cumulative — 2 from `test_resolver.py`, 1 from `test_enricher.py`, 2 from `test_opa_runner.py`).
 
 - [ ] **Step 13: Commit**
 
