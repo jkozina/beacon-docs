@@ -23,7 +23,7 @@ sidebar_label: "Beacon MVP Plan"
 | Tool | Verify with | Install if missing |
 | --- | --- | --- |
 | Python 3.11+ | `python3 --version` | `brew install python@3.11` |
-| Docker Desktop | `docker info` | `brew install --cask docker` |
+| Docker engine (Colima or Desktop) | `docker info` | `brew install colima docker docker-buildx` and `colima start --dns 1.1.1.1` (lighter, CLI-only; recommended), or `brew install --cask docker` (Docker Desktop) |
 | `opa` 0.66+ | `opa version` | `brew install opa` |
 | `gh` CLI authenticated | `gh auth status` | `brew install gh && gh auth login` |
 | GitHub Container Registry write | `echo $CR_PAT \| docker login ghcr.io -u <user> --password-stdin` | Generate PAT with `write:packages` scope |
@@ -607,10 +607,13 @@ Create `beacon-app/Dockerfile`:
 ```dockerfile
 FROM python:3.11-slim
 
-# Install OPA binary
+# Install OPA binary. TARGETARCH is set by Docker buildx to amd64 or arm64 to
+# match the build platform, so the right OPA static binary is pulled in either
+# case. Phase 2's GHCR push pins --platform linux/amd64.
 ARG OPA_VERSION=0.66.0
+ARG TARGETARCH
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
-    && curl -L "https://openpolicyagent.org/downloads/v${OPA_VERSION}/opa_linux_amd64_static" -o /usr/local/bin/opa \
+    && curl -L "https://openpolicyagent.org/downloads/v${OPA_VERSION}/opa_linux_${TARGETARCH}_static" -o /usr/local/bin/opa \
     && chmod +x /usr/local/bin/opa \
     && apt-get purge -y curl && rm -rf /var/lib/apt/lists/*
 
@@ -656,7 +659,7 @@ touch orchestrator/__init__.py resolver/__init__.py enricher/__init__.py pdp/__i
 - [ ] **Step 8: Build the Docker image; confirm it starts**
 
 ```bash
-docker build -t beacon-app:dev .
+DOCKER_BUILDKIT=1 docker build -t beacon-app:dev .
 docker run --rm -d --name beacon-app-test -p 8181:8181 beacon-app:dev
 sleep 3
 curl -s http://localhost:8181/healthz
@@ -664,6 +667,8 @@ docker stop beacon-app-test
 ```
 
 Expected: `{"status":"ok"}`.
+
+> **BuildKit required for `TARGETARCH`.** The Dockerfile uses `ARG TARGETARCH`, which only resolves under BuildKit (the modern builder). On a stock Docker install BuildKit is the default; on Colima the legacy builder is still around as a fallback, so prefix with `DOCKER_BUILDKIT=1` to be explicit. Install the buildx CLI plugin once via `brew install docker-buildx` and add `"cliPluginsExtraDirs": ["/opt/homebrew/lib/docker/cli-plugins"]` to `~/.docker/config.json` so `docker buildx` is discoverable.
 
 - [ ] **Step 9: Commit**
 
