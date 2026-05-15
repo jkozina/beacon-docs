@@ -959,7 +959,7 @@ def _expected_path(source: dict, destination: dict) -> dict:
 PYTHONPATH=. pytest tests/ -v
 ```
 
-Expected: 4 passed.
+Expected: 3 passed (two from `test_resolver.py`, one from `test_enricher.py`).
 
 - [ ] **Step 11: Commit**
 
