@@ -59,8 +59,9 @@ $BEACON_WORKSPACE/
 │   │   └── destinations/
 │   │       └── payments.rego
 │   ├── data/
+│   │   ├── .manifest                   # bundle root declaration ("destinations")
 │   │   ├── compliance-zones.json
-│   │   └── approved-destinations.json
+│   │   └── data.json                   # holds {"destinations": [...]}; name is load-bearing — opa build only auto-loads data.json/data.yaml
 │   ├── tests/
 │   │   ├── deny_test.rego
 │   │   ├── ttl_test.rego
@@ -257,10 +258,14 @@ done
 **Files:**
 - Create: `beacon-policy/policy/enterprise/ttl.rego`
 - Create: `beacon-policy/tests/ttl_test.rego`
-- Create: `beacon-policy/data/approved-destinations.json`
+- Create: `beacon-policy/data/data.json` (filename is load-bearing on OPA 1.x — see Step 5)
+- Create: `beacon-policy/data/.manifest` (bundle root for the data side; required when passing two `--bundle` dirs on OPA 1.x — see Step 7)
+- Create: `beacon-policy/policy/.manifest` (bundle root for the policy side)
 - Create: `beacon-policy/Makefile`
 - Create: `beacon-policy/keys/bundle-signing.pem` (RSA private, gitignored)
 - Create: `beacon-policy/keys/bundle-signing.pub` (RSA public, committed)
+
+> **OPA version note.** This plan was written against OPA 0.66; verified working on OPA 1.16.2. On 1.x, Rego v1 is the default, which forces two small changes from a literal 0.66-era reading: (a) test rules and helper functions must use the `name if { ... }` form (or be in a file that doesn't `import rego.v1` and has its own caveats), and (b) `opa build` with multiple `--bundle` dirs requires each dir to declare a disjoint `.manifest` root or the build fails with `manifest has overlapped roots: '' and ''`.
 
 - [ ] **Step 1: Generate the bundle-signing RSA keypair**
 
@@ -280,9 +285,10 @@ Create `beacon-policy/tests/ttl_test.rego`:
 ```rego
 package beacon.verdict_test
 
+import rego.v1
 import data.beacon.verdict
 
-test_ttl_exceeds_max_for_restricted_destination {
+test_ttl_exceeds_max_for_restricted_destination if {
   result := verdict.deny with input as {
     "spec": {
       "destination": {"dataClassification": "restricted"},
@@ -293,7 +299,7 @@ test_ttl_exceeds_max_for_restricted_destination {
   d.id == "TTL_EXCEEDS_MAX"
 }
 
-test_ttl_within_max_for_restricted_destination_passes {
+test_ttl_within_max_for_restricted_destination_passes if {
   result := verdict.deny with input as {
     "spec": {
       "destination": {"dataClassification": "restricted"},
@@ -303,7 +309,7 @@ test_ttl_within_max_for_restricted_destination_passes {
   not has_ttl_deny(result)
 }
 
-has_ttl_deny(denies) {
+has_ttl_deny(denies) if {
   some d in denies
   d.id == "TTL_EXCEEDS_MAX"
 }
@@ -348,15 +354,31 @@ allow if {
 }
 ```
 
-- [ ] **Step 5: Add stub data**
+- [ ] **Step 5: Add stub data and bundle root declarations**
 
-Create `beacon-policy/data/approved-destinations.json`:
+Create `beacon-policy/data/data.json`:
 
 ```json
 {
   "destinations": []
 }
 ```
+
+> **Why `data.json`, not a descriptive filename.** OPA's bundle builder only auto-loads files literally named `data.json` or `data.yaml` into the data tree. A file named `approved-destinations.json` is read fine by `opa test` (which loads everything under `-d`) but is silently dropped by `opa build` — the signed bundle would ship with `data` set to `{}`, and any rule referencing `data.destinations` would get nothing at runtime.
+
+Create `beacon-policy/data/.manifest`:
+
+```json
+{"roots": ["destinations"]}
+```
+
+Create `beacon-policy/policy/.manifest`:
+
+```json
+{"roots": ["beacon"]}
+```
+
+> **Why two manifests.** On OPA 1.x, `opa build --bundle policy --bundle data` (Step 7) fails with `manifest has overlapped roots: '' and ''` if neither directory declares its bundle root. Declaring disjoint roots (`beacon` for the policy side, `destinations` for the data side) lets OPA merge them into one signed bundle.
 
 - [ ] **Step 6: Re-run tests; confirm they pass**
 
@@ -408,7 +430,14 @@ ls /tmp/bundle-inspect/
 cat /tmp/bundle-inspect/.signatures.json | jq .
 ```
 
-Expected: `.signatures.json` exists and contains a JWS string in the `signatures[0].keyid` / `signatures[0].signed` form.
+Expected: `.signatures.json` exists and contains a `signatures` array. On OPA 1.x each element is a bare JWS string (three base64url segments separated by dots; header decodes to `{"alg":"RS256","kid":"default","typ":"JWT"}`). Also confirm the bundle's data tree is populated, not empty:
+
+```bash
+tar -xzOf build/bundle.tar.gz /data.json    # leading slash is required; OPA writes members as /name
+# expect: {"destinations":[]}
+opa eval -b build/bundle.tar.gz 'data.destinations'
+# expect: "value": []
+```
 
 - [ ] **Step 10: Commit**
 
@@ -418,6 +447,8 @@ git add Makefile policy/ data/ tests/ keys/bundle-signing.pub
 git commit -m "feat: ttl deny rule, tests, signed bundle build"
 git push
 ```
+
+> **Known Phase 1 limitation (deferred to a later task).** The `default allow := false` line at the bottom of `ttl.rego` doesn't actually fail-closed on empty input today: `count(deny) == 0` is defined whenever `deny` is defined (which is always, since `deny` is a set), so `allow` always evaluates and the `default` never fires. With `input = {}` the rule returns `allow = true`. The PDP is expected to schema-validate input before evaluation, so this is acceptable for the POC; when input-schema validation lands we should tighten `allow` to require `input.spec` to exist.
 
 ---
 
