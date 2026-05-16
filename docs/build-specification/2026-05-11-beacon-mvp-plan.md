@@ -1679,13 +1679,15 @@ def main() -> int:
     name = derived["metadata"]["name"]
     (out_dir / "derived-intents").mkdir(exist_ok=True)
     (out_dir / "verdicts").mkdir(exist_ok=True)
-    (out_dir / "canonical").mkdir(exist_ok=True)
     (out_dir / "enrichment").mkdir(exist_ok=True)
     (out_dir / "extraction").mkdir(exist_ok=True)
 
+    # canonical-request stays inside the verdict envelope (verdict["canonicalRequest"]);
+    # it's omitted as a standalone file because in this POC its bytes are
+    # entirely covered by enrichment + derived. Revisit if the enricher
+    # grows non-trivial computed logic that isn't in enrichment.
     (out_dir / "derived-intents" / f"{name}.json").write_text(json.dumps(derived, indent=2))
     (out_dir / "verdicts" / f"{name}.json").write_text(json.dumps(verdict, indent=2))
-    (out_dir / "canonical" / f"{name}.json").write_text(json.dumps(verdict.get("canonicalRequest", {}), indent=2))
     (out_dir / "enrichment" / f"{name}.json").write_text(json.dumps(verdict.get("enrichmentSnapshot", {}), indent=2))
     (out_dir / "extraction" / f"{name}.json").write_text(json.dumps({"status": "ok", "name": name}, indent=2))
 
@@ -1775,7 +1777,7 @@ Create `beacon-action/templates/allow_comment.md`:
 {% for r in verdict.matchedRules %}- `{{ r }}`
 {% endfor %}
 
-{% endif %}Evidence artifacts: derived-intent · enrichment-snapshot · canonical-request · signed verdict. See workflow artifacts.
+{% endif %}Evidence artifacts: derived-intent · enrichment-snapshot · signed verdict. See workflow artifacts.
 ```
 
 > **Why the `{% if %}` guards.** Phase 1's PDP returns `controls={}` and `matchedRules=[]` (the OPA bundle only has the TTL deny rule; no controls and no rule fires on allow). Without the guards, the comment ships empty `**** (primary) | |` rows and an empty `Matched rules` heading. Phase 4 fills both sections in; the guards keep Phase 2 comments clean.
@@ -1916,11 +1918,14 @@ def changed_implementation_files(impl_paths: list[str]) -> list[Path]:
 
 
 def write_evidence(out_dir: Path, name: str, derived: dict, verdict: dict) -> None:
-    for sub in ("derived-intents", "verdicts", "canonical", "enrichment", "extraction"):
+    # Note: canonical-request is intentionally NOT written as a separate file.
+    # It lives in verdict["canonicalRequest"] (self-contained envelope) and in
+    # this POC every other byte of it duplicates enrichment + derived. If/when
+    # the enricher grows non-trivial computed logic, revisit.
+    for sub in ("derived-intents", "verdicts", "enrichment", "extraction"):
         (out_dir / sub).mkdir(parents=True, exist_ok=True)
     (out_dir / "derived-intents" / f"{name}.json").write_text(json.dumps(derived, indent=2))
     (out_dir / "verdicts" / f"{name}.json").write_text(json.dumps(verdict, indent=2))
-    (out_dir / "canonical" / f"{name}.json").write_text(json.dumps(verdict["canonicalRequest"], indent=2))
     (out_dir / "enrichment" / f"{name}.json").write_text(json.dumps(verdict["enrichmentSnapshot"], indent=2))
     (out_dir / "extraction" / f"{name}.json").write_text(json.dumps({"status": "ok", "name": name}, indent=2))
 
