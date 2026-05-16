@@ -1343,18 +1343,34 @@ echo "$CR_PAT" | docker login ghcr.io -u "$BEACON_GH_OWNER" --password-stdin
 
 If `$CR_PAT` is not set, generate a classic PAT with `write:packages` and `read:packages` scopes at https://github.com/settings/tokens, then `export CR_PAT=<token>`.
 
-- [ ] **Step 2: Tag and push**
+- [ ] **Step 2: Build for `linux/amd64` and push**
+
+GitHub Actions runners are amd64. Your local Docker engine may be arm64 (Apple Silicon / Colima), so build with buildx pinning the target platform and push in one step:
 
 ```bash
 cd "$BEACON_WORKSPACE/beacon-app"
-docker tag beacon-app:dev "ghcr.io/$BEACON_GH_OWNER/beacon-app:demo"
-docker push "ghcr.io/$BEACON_GH_OWNER/beacon-app:demo"
+DOCKER_BUILDKIT=1 docker buildx build \
+  --platform linux/amd64 \
+  --tag "ghcr.io/$BEACON_GH_OWNER/beacon-app:demo" \
+  --push .
 ```
+
+This rebuilds under qemu emulation if you're on arm64; the resulting image is amd64-only (multi-arch is a future improvement). The Dockerfile's `${TARGETARCH}` picks the right OPA binary automatically.
 
 - [ ] **Step 3: Make the package public** (so the demo workflow on a fresh PR can pull it)
 
+GitHub's REST API only exposes a visibility PATCH for **org-owned** packages, not user-owned ones. If your owner is a personal account (as `jkozina` is), flip visibility via the web UI:
+
+```text
+https://github.com/users/<owner>/packages/container/beacon-app/package_settings
+```
+
+→ "Change visibility" → Public.
+
+If the owner is an organization, the API does work:
+
 ```bash
-gh api -X PATCH "/user/packages/container/beacon-app" -f visibility=public
+gh api -X PATCH "/orgs/$BEACON_GH_OWNER/packages/container/beacon-app" -f visibility=public
 ```
 
 - [ ] **Step 4: Verify**
